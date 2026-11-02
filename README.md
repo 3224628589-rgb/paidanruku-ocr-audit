@@ -1,1 +1,3 @@
-# Inbound OCR Audit
+# 拍单识别逐图工作台
+
+网页入口：`index.html`。数据快照：2026-10-31。
