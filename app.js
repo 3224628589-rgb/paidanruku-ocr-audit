@@ -1,4 +1,5 @@
 const $=s=>document.querySelector(s);
+const DATA_VERSION='20261109-case87b';
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={manifest:[],filtered:[],photo:null,call:0,region:null,zoom:100,rotation:0,chunks:new Map()};
 const rawFields=[['商品名称','goodsName'],['规格','goodsSpec'],['数量','num'],['批准文号','approvalNo'],['厂家','manufacturer'],['批号','batchCode'],['生产日期','produceDate'],['有效期至','valDate'],['剂型','dosageForm'],['单位','unit'],['单价','price'],['金额','amount'],['产地','place']];
@@ -11,7 +12,7 @@ function statusBadge(text,kind=''){return `<span class="badge ${kind}">${escapeH
 
 async function init(){
   try{
-    const response=await fetch('data/index.json');if(!response.ok)throw Error(`目录 HTTP ${response.status}`);
+    const response=await fetch(`data/index.json?v=${DATA_VERSION}`);if(!response.ok)throw Error(`目录 HTTP ${response.status}`);
     state.manifest=await response.json();
     fillSelect('#storeFilter',[...new Set(state.manifest.map(x=>x.store))]);
     fillSelect('#supplierFilter',[...new Set(state.manifest.map(x=>x.supplier))]);
@@ -34,7 +35,7 @@ async function init(){
 function fillSelect(selector,values){const select=$(selector);values.filter(Boolean).sort((a,b)=>a.localeCompare(b,'zh-CN')).forEach(value=>{const option=document.createElement('option');option.value=value;option.textContent=value;select.append(option)})}
 function applyFilters(){const store=$('#storeFilter').value,supplier=$('#supplierFilter').value,q=$('#productFilter').value.trim().toLowerCase();state.filtered=state.manifest.filter(x=>(!store||x.store===store)&&(!supplier||x.supplier===supplier)&&(!q||String(x.id).includes(q)||x.names.some(n=>n.toLowerCase().includes(q))));$('#filterCount').textContent=`${state.filtered.length} / ${state.manifest.length} 张`;$('#railCount').textContent=state.filtered.length;renderList();if(state.filtered.length&&!state.filtered.some(x=>x.id===state.photo?.id))selectPhoto(state.filtered[0].id);if(!state.filtered.length){$('#photoList').innerHTML='<p class="empty">没有符合条件的图片</p>'}}
 function renderList(){const list=$('#photoList');list.innerHTML=state.filtered.map(x=>`<button type="button" class="photo-card ${state.photo?.id===x.id?'active':''}" data-id="${x.id}"><span class="line1">#${x.id}<small>${escapeHtml(shortStore(x.store))}</small></span><span class="supplier">${escapeHtml(x.supplier||'供应商未识别')}</span><span class="minor">${x.hasLog?`豆包 ${x.rawCount} 项 · 最终 ${x.finalCount} 行`:'缺原始日志 · 最终 '+x.finalCount+' 行'}${x.missingCoords?` · <span class="warn">无框 ${x.missingCoords}</span>`:''}</span></button>`).join('');list.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>selectPhoto(Number(b.dataset.id)))}
-async function loadPhoto(meta){const key=meta.chunk;if(!state.chunks.has(key)){const response=await fetch(`data/chunks/${String(key).padStart(2,'0')}.json`);if(!response.ok)throw Error(`图片数据 HTTP ${response.status}`);state.chunks.set(key,await response.json())}return state.chunks.get(key)[String(meta.id)]}
+async function loadPhoto(meta){const key=meta.chunk;if(!state.chunks.has(key)){const response=await fetch(`data/chunks/${String(key).padStart(2,'0')}.json?v=${DATA_VERSION}`);if(!response.ok)throw Error(`图片数据 HTTP ${response.status}`);state.chunks.set(key,await response.json())}return state.chunks.get(key)[String(meta.id)]}
 async function selectPhoto(id,updateHash=true){if(!id)return;const meta=state.manifest.find(x=>x.id===id);if(!meta)return;state.photo={id};renderList();$('#photoTitle').textContent=`图片 #${id}`;$('#photoMeta').textContent='正在读取四路证据…';try{const photo=await loadPhoto(meta);if(state.photo?.id!==id)return;state.photo=photo;state.call=0;state.region=null;state.zoom=100;state.rotation=0;$('#zoomRange').value=100;updateTransform();renderPhoto();renderList();if(updateHash)history.replaceState(null,'',`#photo=${id}`);document.querySelector('.photo-card.active')?.scrollIntoView({block:'nearest'})}catch(error){$('#photoMeta').textContent=`读取失败：${error.message}`}}
 function step(direction){const index=state.filtered.findIndex(x=>x.id===state.photo?.id);const next=state.filtered[index+direction];if(next)selectPhoto(next.id)}
 function updateTransform(){$('#imageStage').style.transform=`scale(${state.zoom/100}) rotate(${state.rotation}deg)`;$('#zoomValue').textContent=state.zoom+'%'}
