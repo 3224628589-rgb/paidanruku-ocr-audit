@@ -7,3 +7,6 @@
   .photo-rail,.image-pane,.results-pane,.photo-list,.image-viewport,.results-scroll{min-height:0}
   .photo-list,.results-scroll{overscroll-behavior:contain}
 }
+.audit-note{white-space:pre-line}
+.audit-section{background:#172233;border-left:3px solid #70a8ef}
+.audit-section .section-title h2{color:#aecdff}

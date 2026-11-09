@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>拍单识别｜317 张逐图四路对照</title>
-  <link rel="stylesheet" href="styles.css?v=20261109-fixed-scroll">
+  <link rel="stylesheet" href="styles.css?v=20261109-case87">
 </head>
 <body>
   <header class="topbar">
@@ -45,13 +45,14 @@
     <section class="results-pane" aria-label="四路识别对照">
       <div class="results-bar"><div id="sourceBadges"></div><div class="photo-nav"><button id="prevPhoto" type="button" aria-label="上一张">←</button><button id="nextPhoto" type="button" aria-label="下一张">→</button></div></div>
       <div class="results-scroll">
+        <section class="result-section audit-section"><div class="section-title"><h2>这张图的结论</h2></div><div id="auditNote" class="audit-note"></div></section>
         <section class="result-section" id="doubaoSection"><div class="section-title"><h2>豆包识别内容</h2><select id="callSelect" aria-label="选择历史调用"></select></div><div id="doubaoContent"></div></section>
+        <section class="result-section" id="finalSection"><div class="section-title"><h2>最终入库行</h2><span id="finalCount"></span></div><div id="finalContent"></div></section>
         <section class="result-section codex-section" id="codexSection"><div class="section-title"><h2>Codex 识别与核读</h2><span id="codexBadge"></span></div><div id="codexContent"></div></section>
         <section class="result-section" id="ocrSection"><div class="section-title"><h2>火山 OCR 文字与坐标</h2><span id="ocrCount"></span></div><div id="ocrContent"></div></section>
-        <section class="result-section"><div class="section-title"><h2>逐图结论</h2></div><div id="auditNote" class="audit-note"></div></section>
       </div>
     </section>
   </main>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=20261109-case87" defer></script>
 </body>
 </html>
