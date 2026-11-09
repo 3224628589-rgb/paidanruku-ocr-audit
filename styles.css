@@ -3,7 +3,7 @@
 /* Each desktop column owns its scroll position. The document itself must not grow. */
 @media (min-width:981px){
   html,body{height:100%;overflow:hidden}
-  .workbench{min-height:0;overflow:hidden}
+  .workbench{min-height:0;grid-template-rows:minmax(0,1fr);overflow:hidden}
   .photo-rail,.image-pane,.results-pane,.photo-list,.image-viewport,.results-scroll{min-height:0}
   .photo-list,.results-scroll{overscroll-behavior:contain}
 }
