@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>供应商提示词｜拍单识别</title>
+  <link rel="stylesheet" href="supplier-prompts.css?v=20261110-v1">
+</head>
+<body>
+  <header class="topbar"><div class="brand">▦ <b>供应商提示词</b><small>当前未删除图片 · 317 张</small></div><a href="index.html">返回逐图工作台 ↗</a></header>
+  <div class="workspace">
+    <aside class="rail">
+      <div class="rail-controls"><input id="search" type="search" placeholder="搜索供应商、模板、问题、图片 ID"><select id="level"><option value="">全部证据级别</option><option value="reviewed">已核准错误</option><option value="observed">原图/日志异常</option><option value="preventive">模板预防</option><option value="no_log">缺原始日志</option></select><span id="count"></span></div>
+      <div id="list" class="list"></div>
+    </aside>
+    <main class="detail" id="detail"><div class="empty">正在读取供应商规则…</div></main>
+  </div>
+  <script src="supplier-prompts.js?v=20261110-v1" defer></script>
+</body>
+</html>
