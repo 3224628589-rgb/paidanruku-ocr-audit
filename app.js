@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s);
-const DATA_VERSION='20261110-field-review2';
+const DATA_VERSION='20261110-field-review3';
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={manifest:[],filtered:[],photo:null,call:0,region:null,zoom:100,rotation:0,chunks:new Map()};
 const rawFields=[['商品名称','goodsName'],['规格','goodsSpec'],['数量','num'],['批准文号','approvalNo'],['厂家','manufacturer'],['批号','batchCode'],['生产日期','produceDate'],['有效期至','valDate'],['剂型','dosageForm'],['单位','unit'],['单价','price'],['金额','amount'],['产地','place']];
@@ -49,20 +49,22 @@ function renderOverlay(){const svg=$('#ocrOverlay'),img=$('#photoImage'),call=cu
 function selectRegion(id){state.region=id;const r=currentCall()?.regions.find(x=>x.id===id);$('#selectedRegion').textContent=r?`OCR #${id}：${r.text} · ${r.polygon.map(pt=>pt.join(',')).join(' / ')}`:'点击蓝色坐标框，可定位对应 OCR 文字';$('#ocrContent').querySelectorAll('.ocr-row').forEach(el=>el.classList.toggle('active',Number(el.dataset.region)===id));$('#ocrContent').querySelector(`.ocr-row[data-region="${id}"]`)?.scrollIntoView({block:'nearest'});renderOverlay()}
 function renderCodex(){
   const c=state.photo.codex,manual=c.manualRows||[],reviewed=c.reviewedRows||[],vision=c.independentText||[];
+  const comparisonKeys={'商品名称':['goodsName','common_name'],'规格':['goodsSpec','spec'],'厂家':['manufacturer','manufacturer'],'批准文号':['approvalNo','approval_no'],'批号':['batchCode','batch_code'],'生产日期':['produceDate','produce_date'],'有效期至':['valDate','val_date'],'数量':['num','pack_qty']};
   $('#codexBadge').textContent=reviewed.length?`${reviewed.length} 行按原图核准`:'尚无完整逐字段核准';
   let html='';
   if(reviewed.length){
     html+=reviewed.map(r=>{
       const model=state.photo.calls[0]?.llm?.items?.[r.row-1]||{};
-      const comparisons=[['商品名称','goodsName','common_name'],['规格','goodsSpec','spec'],['厂家','manufacturer','manufacturer']];
+      const comparisons=r.errorFields.map(label=>[label,...comparisonKeys[label]]);
       return `<div class="reviewed-row">
         <div class="reviewed-heading">原图商品行 ${escapeHtml(r.row)} · 独立核准</div>
         <div class="reviewed-errors">错误字段：${r.errorFields.map(escapeHtml).join('、')}</div>
         <table class="field-comparison"><thead><tr><th>字段</th><th>豆包返回</th><th>原图核准</th></tr></thead><tbody>${comparisons.map(([label,rawKey,truthKey])=>`<tr><th>${label}</th><td>${escapeHtml(model[rawKey]??'—')}</td><td>${escapeHtml(r.truth[truthKey])}${label==='规格'&&r.sourceSpec?`<small>原文片段：${escapeHtml(r.sourceSpec)}；末尾 / 是字段分隔符</small>`:''}</td></tr>`).join('')}</tbody></table>
-        <div class="mini-heading">其余已核准字段</div>${fieldGrid(r.truth,truthFields)}
-        <div class="reviewed-analysis"><strong>错误原因</strong><p>${escapeHtml(r.cause)}</p><strong>供应商专属提示词</strong><p>${escapeHtml(r.prompt)}</p><small>${escapeHtml(r.verification)}${r.referenceUrl?` <a href="${escapeHtml(r.referenceUrl)}" target="_blank" rel="noopener noreferrer">药学数据记录 ↗</a>`:''}</small></div>
+        <div class="mini-heading">其余已核准字段</div>${fieldGrid(r.truth,truthFields.filter(([label])=>!r.errorFields.includes(label)))}
       </div>`;
     }).join('');
+    const a=c.reviewAnalysis||reviewed.find(r=>r.cause);
+    if(a){html+=`<div class="reviewed-analysis"><strong>错误原因</strong><p>${escapeHtml(a.cause)}</p><strong>供应商专属提示词</strong><p>${escapeHtml(a.prompt)}</p><small>${escapeHtml(a.verification)}${a.referenceUrl?` <a href="${escapeHtml(a.referenceUrl)}" target="_blank" rel="noopener noreferrer">药学数据记录 ↗</a>`:''}</small></div>`}
   }else{
     html+='<p class="unreviewed-note">这张图还没有独立的完整逐字段核准结果。下方旧核对记录和机器文字稿不能当作正确商品字段。</p>';
   }
