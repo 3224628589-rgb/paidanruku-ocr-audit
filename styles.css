@@ -10,3 +10,20 @@
 .audit-note{white-space:pre-line}
 .audit-section{background:#172233;border-left:3px solid #70a8ef}
 .audit-section .section-title h2{color:#aecdff}
+.unreviewed-note{padding:10px 12px;border:1px solid #66543d;border-radius:6px;background:#2b251c;color:#f0d5a6;line-height:1.6}
+.reviewed-row{border:1px solid #4a7b69;border-radius:8px;padding:12px;background:#14251f}
+.reviewed-heading{font-size:14px;font-weight:700;color:#b2e9ca}
+.reviewed-errors{margin:7px 0 10px;color:#ffb5a0;font-weight:600}
+.field-comparison{width:100%;border-collapse:collapse;table-layout:fixed;margin:8px 0 12px}
+.field-comparison th,.field-comparison td{border:1px solid #3b554e;padding:8px;text-align:left;vertical-align:top;overflow-wrap:anywhere;line-height:1.5}
+.field-comparison thead th{background:#203b31;color:#b2e9ca}
+.field-comparison th:first-child{width:64px}
+.field-comparison td{width:calc((100% - 64px)/2)}
+.field-comparison td:nth-child(2){color:#f7b5aa;background:#382725}
+.field-comparison td:nth-child(3){color:#c6f2d9;background:#193b2c}
+.field-comparison small{display:block;color:#9fb6aa;margin-top:4px}
+.reviewed-analysis{margin-top:12px;padding-top:12px;border-top:1px solid #3b554e;line-height:1.6}
+.reviewed-analysis strong{color:#b2e9ca}
+.reviewed-analysis p{white-space:pre-line;margin:4px 0 13px;overflow-wrap:anywhere}
+.reviewed-analysis small{display:block;color:#a5bcb0}
+.reviewed-analysis a{color:#9bc8ff}

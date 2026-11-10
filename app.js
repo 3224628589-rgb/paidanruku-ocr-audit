@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s);
-const DATA_VERSION='20261109-case87b';
+const DATA_VERSION='20261110-field-review';
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={manifest:[],filtered:[],photo:null,call:0,region:null,zoom:100,rotation:0,chunks:new Map()};
 const rawFields=[['商品名称','goodsName'],['规格','goodsSpec'],['数量','num'],['批准文号','approvalNo'],['厂家','manufacturer'],['批号','batchCode'],['生产日期','produceDate'],['有效期至','valDate'],['剂型','dosageForm'],['单位','unit'],['单价','price'],['金额','amount'],['产地','place']];
@@ -16,7 +16,7 @@ async function init(){
     state.manifest=await response.json();
     fillSelect('#storeFilter',[...new Set(state.manifest.map(x=>x.store))]);
     fillSelect('#supplierFilter',[...new Set(state.manifest.map(x=>x.supplier))]);
-    $('#globalStatus').textContent=`${state.manifest.length} 张当前图片 · ${state.manifest.filter(x=>x.hasLog).length} 张有原始日志`;
+    $('#globalStatus').textContent=`${state.manifest.length} 张当前图片 · ${state.manifest.filter(x=>x.hasLog).length} 张有原始日志 · ${state.manifest.filter(x=>x.reviewedCount).length} 张完成独立逐字段核准`;
     for(const id of ['storeFilter','supplierFilter','productFilter'])$("#"+id).addEventListener(id==='productFilter'?'input':'change',applyFilters);
     $('#clearFilters').onclick=()=>{$('#storeFilter').value='';$('#supplierFilter').value='';$('#productFilter').value='';applyFilters()};
     $('#prevPhoto').onclick=()=>step(-1);$('#nextPhoto').onclick=()=>step(1);
@@ -47,10 +47,28 @@ function renderCall(){const call=currentCall();const p=state.photo;if(!p)return;
   $('#ocrCount').textContent=`${call.regions.length} 个文字块 · 返回码 ${call.volcCode??'—'}`;$('#ocrContent').innerHTML=`<p class="hint">下列四点坐标来自火山原始响应；点击文字块可在左侧原图定位。坐标按火山返回的原始数组顺序展示，单位为原图像素。</p><div class="ocr-list">${call.regions.length?call.regions.map(r=>`<div class="ocr-row" data-region="${r.id}"><span class="index">${r.id}</span><span class="text">${escapeHtml(r.text)}</span><span class="coords">${escapeHtml(r.polygon.map(pt=>pt.join(',')).join(' · '))}</span></div>`).join(''):'<div class="empty">无火山文字块；返回信息：'+escapeHtml(call.volcMessage||call.volcCode||'—')+'</div>'}</div>`;$('#ocrContent').querySelectorAll('[data-region]').forEach(el=>el.onclick=()=>selectRegion(Number(el.dataset.region)));renderOverlay()}
 function renderOverlay(){const svg=$('#ocrOverlay'),img=$('#photoImage'),call=currentCall();svg.replaceChildren();if(!call||!$('#overlayToggle').checked||!img.naturalWidth)return;svg.setAttribute('viewBox',`0 0 ${img.naturalWidth} ${img.naturalHeight}`);svg.setAttribute('preserveAspectRatio','none');for(const r of call.regions){const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');poly.setAttribute('points',r.polygon.map(pt=>pt.join(',')).join(' '));poly.setAttribute('class','ocr-polygon'+(state.region===r.id?' selected':''));poly.dataset.region=r.id;const title=document.createElementNS('http://www.w3.org/2000/svg','title');title.textContent=`#${r.id} ${r.text}`;poly.append(title);poly.onclick=()=>selectRegion(r.id);svg.append(poly)}}
 function selectRegion(id){state.region=id;const r=currentCall()?.regions.find(x=>x.id===id);$('#selectedRegion').textContent=r?`OCR #${id}：${r.text} · ${r.polygon.map(pt=>pt.join(',')).join(' / ')}`:'点击蓝色坐标框，可定位对应 OCR 文字';$('#ocrContent').querySelectorAll('.ocr-row').forEach(el=>el.classList.toggle('active',Number(el.dataset.region)===id));$('#ocrContent').querySelector(`.ocr-row[data-region="${id}"]`)?.scrollIntoView({block:'nearest'});renderOverlay()}
-function renderCodex(){const c=state.photo.codex,manual=c.manualRows||[],cross=c.crosscheckRows||[],vision=c.independentText||[];const full=manual.filter(x=>x.truth).length;$('#codexBadge').textContent=manual.length?`${manual.length} 行旧人工核对 · ${full} 行有完整真值`:'独立 OCR 辅助草稿';let html='<p class="hint">上面是之前人工核对的结果；下面用独立 OCR 核读文字。候选字段尚未逐行核准。</p>';
-  if(manual.length){html+='<div class="mini-heading">Codex 既往逐行核准</div>'+manual.map((r,i)=>`<div class="manual-note ${r.judgment==='通过'?'':'fail'}"><strong>原图商品行 ${escapeHtml(r.sourceRow||i+1)} · ${escapeHtml(r.judgment||'待判')}</strong>${r.truth?`<div class="truth">${fieldGrid(r.truth,truthFields)}</div>`:`<span>${escapeHtml(r.errorTags||r.errorType||'已核对决定性差异；完整字段尚未独立转录')}</span>`}<small>${escapeHtml(r.method||'')} ${r.outputRowId?'· 对应最终行 '+escapeHtml(r.outputRowId):''}</small></div>`).join('')}
-  html+='<div class="mini-heading">Codex 独立 OCR 交叉核读</div>';
-  html+=cross.length?cross.map((r,i)=>`<div class="item-card"><div class="item-head"><span class="item-no">${i+1}</span><span class="item-name">${escapeHtml(r.fields.find(f=>f.name==='商品名称')?.value||'名称未返回')}</span><span class="item-status">候选来自${escapeHtml(r.candidateSource)}</span></div><div class="field-grid">${r.fields.map(f=>{const score=f.match?.score,shortValue=String(f.value??'').replace(/[^\p{L}\p{N}]/gu,'').length<4,exact=Boolean(f.match?.exact);const grade=score==null||shortValue?'none':exact?'':score>=.55?'low':'none';const badge=score==null?'无候选':shortValue?'短值待核':exact?'文字命中·未核行':score>=.55?'近似文字':'未找到同文';return `<div class="field evidence-field ${['商品名称','批准文号','厂家'].includes(f.name)?'full':''}" title="独立 OCR 最接近：${escapeHtml(f.match?.ocrText||'无')}；文字相似度 ${score??'—'}，未验证字段及商品行归属"><span class="label">${escapeHtml(f.name)}</span><span class="value ${f.value==null?'blank':''}">${escapeHtml(f.value??'—')}</span><span class="match ${grade}">${badge}</span></div>`}).join('')}</div></div>`).join(''):'<p class="empty">没有可用于字段交叉核读的候选；请看下方独立文字稿。</p>';
-  html+=`<div class="mini-heading">本机独立 OCR 文字稿 · ${vision.length} 块</div><div class="vision-list">${vision.length?vision.map(v=>`<span title="置信度 ${v.confidence}">${escapeHtml(v.text)}</span>`).join(''):'没有识别到文字'}</div>`;$('#codexContent').innerHTML=html}
+function renderCodex(){
+  const c=state.photo.codex,manual=c.manualRows||[],reviewed=c.reviewedRows||[],vision=c.independentText||[];
+  $('#codexBadge').textContent=reviewed.length?`${reviewed.length} 行按原图核准`:'尚无完整逐字段核准';
+  let html='';
+  if(reviewed.length){
+    html+=reviewed.map(r=>{
+      const model=state.photo.calls[0]?.llm?.items?.[r.row-1]||{};
+      const comparisons=[['商品名称','goodsName','common_name'],['规格','goodsSpec','spec'],['厂家','manufacturer','manufacturer']];
+      return `<div class="reviewed-row">
+        <div class="reviewed-heading">原图商品行 ${escapeHtml(r.row)} · 独立核准</div>
+        <div class="reviewed-errors">错误字段：${r.errorFields.map(escapeHtml).join('、')}</div>
+        <table class="field-comparison"><thead><tr><th>字段</th><th>豆包返回</th><th>原图核准</th></tr></thead><tbody>${comparisons.map(([label,rawKey,truthKey])=>`<tr><th>${label}</th><td>${escapeHtml(model[rawKey]??'—')}</td><td>${escapeHtml(r.truth[truthKey])}${label==='规格'&&r.sourceSpec?`<small>原文片段：${escapeHtml(r.sourceSpec)}；末尾 / 是字段分隔符</small>`:''}</td></tr>`).join('')}</tbody></table>
+        <div class="mini-heading">其余已核准字段</div>${fieldGrid(r.truth,truthFields)}
+        <div class="reviewed-analysis"><strong>错误原因</strong><p>${escapeHtml(r.cause)}</p><strong>供应商专属提示词</strong><p>${escapeHtml(r.prompt)}</p><small>${escapeHtml(r.verification)}${r.referenceUrl?` <a href="${escapeHtml(r.referenceUrl)}" target="_blank" rel="noopener noreferrer">药学数据记录 ↗</a>`:''}</small></div>
+      </div>`;
+    }).join('');
+  }else{
+    html+='<p class="unreviewed-note">这张图还没有独立的完整逐字段核准结果。下方旧核对记录和机器文字稿不能当作正确商品字段。</p>';
+  }
+  if(manual.length){html+='<div class="mini-heading">既往逐行核对记录</div>'+manual.map((r,i)=>`<div class="manual-note ${r.judgment==='通过'?'':'fail'}"><strong>原图商品行 ${escapeHtml(r.sourceRow||i+1)} · ${escapeHtml(r.judgment||'待判')}</strong>${r.truth?`<div class="truth">${fieldGrid(r.truth,truthFields)}</div>`:`<span>${escapeHtml(r.errorTags||r.errorType||'核对了部分差异；未完整转录所有字段')}</span>`}<small>${escapeHtml(r.method||'')} ${r.outputRowId?'· 对应最终行 '+escapeHtml(r.outputRowId):''}</small></div>`).join('')}
+  html+=`<div class="mini-heading">本机 OCR 文字稿 · ${vision.length} 块（未经逐字段核准）</div><div class="vision-list">${vision.length?vision.map(v=>`<span title="置信度 ${v.confidence}">${escapeHtml(v.text)}</span>`).join(''):'没有识别到文字'}</div>`;
+  $('#codexContent').innerHTML=html;
+}
 
 init();
