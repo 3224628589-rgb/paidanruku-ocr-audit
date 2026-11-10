@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s);
-const DATA_VERSION='20261110-field-review';
+const DATA_VERSION='20261110-field-review2';
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={manifest:[],filtered:[],photo:null,call:0,region:null,zoom:100,rotation:0,chunks:new Map()};
 const rawFields=[['商品名称','goodsName'],['规格','goodsSpec'],['数量','num'],['批准文号','approvalNo'],['厂家','manufacturer'],['批号','batchCode'],['生产日期','produceDate'],['有效期至','valDate'],['剂型','dosageForm'],['单位','unit'],['单价','price'],['金额','amount'],['产地','place']];
